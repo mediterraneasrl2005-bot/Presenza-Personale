@@ -1,0 +1,7 @@
+{
+  "name": "Presenze Pro",
+  "description": "Sistema professionale di registro presenze e timbratura cantiere con GPS e gestione calendario.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
