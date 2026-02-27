@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { api } from './services/api';
 import { Employee, Attendance, CalendarOverride, Note } from './types';
-
+import datiDipendenti from './dipendenti.json';
 // --- Utility Components ---
 
 const Badge = ({ children, color = 'accent' }: { children: React.ReactNode, color?: string }) => (
