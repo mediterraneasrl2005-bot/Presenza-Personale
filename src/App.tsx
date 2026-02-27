@@ -122,7 +122,7 @@ const Dashboard = ({ employees, attendance }: { employees: Employee[], attendanc
   );
 };
 
-const EmployeeManager = ({ employees, onRefresh }: { employees: Employee[], onRefresh: () => void }) => {
+const [employees, setEmployees] = useState<Employee[]>(datiDipendenti);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEmp, setEditingEmp] = useState<Partial<Employee> | null>(null);
 
