@@ -1,181 +1,78 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-    LayoutDashboard,
-    Calendar as CalendarIcon,
-    Users,
-    Clock,
-    Link as LinkIcon,
-    Hospital,
-    FileText,
-    Plus,
-    Search,
-    MapPin,
-    LogOut,
-    ChevronLeft,
-    ChevronRight,
-    Download,
-    Trash2,
-    Edit2,
-    CheckCircle2,
-    AlertCircle
-} from 'lucide-react';
-import { api } from './services/api';
-import { Employee, Attendance, CalendarOverride, Note } from './types';
+import React, { useState, useEffect } from 'react';
+import { MapPin, Clock, LogOut, CheckCircle2 } from 'lucide-react';
 import datiDipendenti from './dipendenti.json';
-// --- Configurazione Cantieri e Assegnazioni ---
-const CONFIG_CANTIERI = [
-  {
-    id: "bonomo_4",
-    nome: "Ass.For.Seo - Via Bonomo",
-    indirizzo: "Via G. Bonomo, 4, Palermo",
-    lat: 38.1311,
-    lng: 13.3552,
-    raggio: 0.15, // Riconosce il dipendente nel raggio di 150 metri
-    dipendentiAssegnati: ["MARINO MARIA ROSA"]
-  }
-];
-// --- Componenti di Utilità ---
-const Badge = ({ children, color = 'accent' }: { children: React.ReactNode, color?: string }) => (
-  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-${color}/10 text-${color} border border-${color}/20`}>
-    {children}
-  </span>
-);
 
-const Card = ({ title, subtitle, icon: Icon, color = 'accent' }: any) => (
-  <div className="bg-surface border border-border rounded-xl p-5 relative overflow-hidden">
-    <div className={`absolute top-0 left-0 right-0 h-1 bg-${color}`} />
-    <div className="flex justify-between items-start mb-2">
-      <div>
-        <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">{title}</p>
-        <h3 className="font-display text-2xl font-extrabold">{subtitle}</h3>
-      </div>
-      {Icon && <Icon className="opacity-50" size={20} />}
-    </div>
-  </div>
-);
-
-// --- Componente Principale ---
 export default function App() {
-    const [employees, setEmployees] = useState<Employee[]>(datiDipendenti);
-    const [attendance, setAttendance] = useState<Attendance[]>([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingEmp, setEditingEmp] = useState<Partial<Employee> | null>(null);
+  const [user, setUser] = useState<any>(null); // Stato per l'utente loggato
+  const [pin, setPin] = useState('');
+  const [status, setStatus] = useState('Pronto');
 
-    // Carica i dati iniziali
-    useEffect(() => {
-        loadData();
-    }, []);
+  // Funzione di Login col PIN
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trovato = datiDipendenti.find(d => d.pin === pin);
+    if (trovato) {
+      setUser(trovato);
+    } else {
+      alert("PIN errato!");
+    }
+  };
 
-    const loadData = async () => {
-        try {
-            const att = await api.getAttendance();
-            setAttendance(att);
-        } catch (error) {
-            console.error("Errore nel caricamento presenze:", error);
-        }
-    };
-
-    const handleSave = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const form = e.target as HTMLFormElement;
-        const data = {
-            ...editingEmp,
-            nome: (form.nome as any).value,
-            pin: (form.pin as any).value,
-            ore_g: parseFloat((form.ore_g as any).value),
-        };
-        // Qui andrebbe la chiamata API per salvare, per ora aggiorniamo lo stato locale
-        setIsModalOpen(false);
-        setEditingEmp(null);
-    };
-
+  // Se l'utente non è loggato, vede la lista nomi e inserimento PIN
+  if (!user) {
     return (
-        <div className="min-h-screen bg-background text-foreground p-6">
-            <header className="flex justify-between items-center mb-8">
-                <div>
-                    <h1 className="font-display text-3xl font-black">MEDITERRANEA SRL</h1>
-                    <p className="text-gray-500">Gestione Presenze Febbraio 2026</p>
-                </div>
-                <button 
-                    onClick={() => { setEditingEmp(null); setIsModalOpen(true); }}
-                    className="bg-accent hover:bg-accent/80 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all"
-                >
-                    <Plus size={18} /> Nuovo Dipendente
-                </button>
-            </header>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <Card title="Dipendenti Totali" subtitle={employees.length} icon={Users} color="blue-500" />
-                <Card title="Ore Totali Mese" subtitle="1.240h" icon={Clock} color="green-500" />
-                <Card title="Assenze Oggi" subtitle="4" icon={AlertCircle} color="red-500" />
-            </div>
-
-            <div className="bg-surface border border-border rounded-xl overflow-hidden">
-                <table className="w-full text-left text-sm">
-                    <thead className="bg-muted text-[10px] uppercase tracking-widest text-gray-500">
-                        <tr>
-                            <th className="p-4">Nominativo</th>
-                            <th className="p-4">PIN</th>
-                            <th className="p-4">Ore/Giorno</th>
-                            <th className="p-4 text-right">Azioni</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/50">
-                        {employees.map((emp) => (
-                            <tr key={emp.id} className="hover:bg-muted/50 transition-colors">
-                                <td className="p-4 font-bold">{emp.nome}</td>
-                                <td className="p-4 font-mono text-accent">{emp.pin || '----'}</td>
-                                <td className="p-4 text-gray-400">{emp.ore_g || 8}h</td>
-                                <td className="p-4 text-right space-x-2">
-                                    <button onClick={() => { setEditingEmp(emp); setIsModalOpen(true); }} className="p-2 hover:text-blue-500">
-                                        <Edit2 size={16} />
-                                    </button>
-                                    <button className="p-2 hover:text-red-500">
-                                        <Trash2 size={16} />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {/* Modal per Nuovo/Modifica */}
-            <AnimatePresence>
-                {isModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                        <motion.div 
-                            initial={{ scale: 0.9, opacity: 0 }} 
-                            animate={{ scale: 1, opacity: 1 }} 
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-surface border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl"
-                        >
-                            <h2 className="font-display text-xl font-bold mb-4">{editingEmp ? 'Modifica' : 'Nuovo'} Dipendente</h2>
-                            <form onSubmit={handleSave} className="space-y-4">
-                                <div>
-                                    <label className="block text-[10px] uppercase text-gray-500 mb-1">Nominativo</label>
-                                    <input name="nome" defaultValue={editingEmp?.nome} required className="w-full bg-background border border-border rounded-lg p-2 outline-none focus:border-accent" />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-[10px] uppercase text-gray-500 mb-1">PIN</label>
-                                        <input name="pin" defaultValue={editingEmp?.pin} maxLength={4} className="w-full bg-background border border-border rounded-lg p-2 font-mono" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[10px] uppercase text-gray-500 mb-1">Ore Standard</label>
-                                        <input name="ore_g" type="number" step="0.5" defaultValue={editingEmp?.ore_g || 8} className="w-full bg-background border border-border rounded-lg p-2" />
-                                    </div>
-                                </div>
-                                <div className="flex justify-end gap-2 mt-6">
-                                    <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-500">Annulla</button>
-                                    <button type="submit" className="bg-accent text-white px-4 py-2 rounded-lg">Salva</button>
-                                </div>
-                            </form>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
-        </div>
+      <div className="min-h-screen bg-slate-900 text-white p-6 flex flex-col items-center">
+        <h1 className="text-2xl font-bold mb-8 text-accent">Accesso Dipendenti</h1>
+        <form onSubmit={handleLogin} className="w-full max-w-sm space-y-4">
+          <input 
+            type="password" 
+            placeholder="Inserisci il tuo PIN" 
+            className="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-center text-2xl tracking-widest"
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
+          />
+          <button type="submit" className="w-full bg-accent p-4 rounded-xl font-bold">ENTRA</button>
+        </form>
+      </div>
     );
+  }
+
+  // --- INTERFACCIA CHE VEDE IL DIPENDENTE DOPO IL LOGIN ---
+  return (
+    <div className="min-h-screen bg-slate-900 text-white p-6">
+      <div className="flex justify-between items-center mb-10">
+        <div>
+          <p className="text-slate-400 text-sm">Bentornato,</p>
+          <h2 className="text-xl font-bold">{user.nome}</h2>
+        </div>
+        <button onClick={() => setUser(null)} className="p-2 bg-slate-800 rounded-lg"><LogOut size={20}/></button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
+        <button 
+          onClick={() => setStatus('Entrata Registrata')}
+          className="h-32 bg-emerald-500 rounded-3xl flex flex-col items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
+        >
+          <Clock size={32}/>
+          <span className="text-xl font-black">ENTRATA</span>
+        </button>
+
+        <button 
+          onClick={() => setStatus('Uscita Registrata')}
+          className="h-32 bg-rose-500 rounded-3xl flex flex-col items-center justify-center gap-2 shadow-lg shadow-rose-500/20"
+        >
+          <LogOut size={32}/>
+          <span className="text-xl font-black">USCITA</span>
+        </button>
+      </div>
+
+      <div className="mt-10 p-6 bg-slate-800 rounded-2xl border border-slate-700">
+        <div className="flex items-center gap-3 mb-2">
+          <MapPin className="text-accent" size={18}/>
+          <span className="text-sm font-bold text-slate-300">Stato GPS:</span>
+        </div>
+        <p className="text-emerald-400 font-mono text-sm">{status}</p>
+      </div>
+    </div>
+  );
 }
