@@ -1,201 +1,226 @@
 [
   {
+    "id": 1,
     "nome": "MARINO MARIA ROSA",
-    "ore_giornaliere": {"1": null, "2": "0.5", "3": "0.5", "4": "0.5", "5": "0.5", "6": "A", "27": "A"},
-    "totale_gg": 16,
+    "pin": "1001",
+    "ore_g": 0.5,
     "totale_ore": 8
   },
   {
+    "id": 2,
     "nome": "DOMINO ENRICA",
-    "ore_giornaliere": {"1": null, "2": "5", "3": "5", "4": "5", "5": "5", "6": "5", "27": "5"},
-    "totale_gg": 20,
+    "pin": "1002",
+    "ore_g": 5,
     "totale_ore": 100
   },
   {
+    "id": 3,
     "nome": "FARRUGGIA GIUSEPPINA",
-    "ore_giornaliere": {"2": "1.5", "3": "1.5", "4": "1.5", "5": "1.5", "6": "1.5", "27": "1.5"},
-    "totale_gg": 20,
+    "pin": "1003",
+    "ore_g": 1.5,
     "totale_ore": 30
   },
   {
+    "id": 4,
     "nome": "MAGGI CONCETTA",
-    "ore_giornaliere": {"2": "1.5", "3": "1.5", "4": "1.5", "5": "1.5", "6": "1.5", "27": "1.5"},
-    "totale_gg": 20,
+    "pin": "1004",
+    "ore_g": 1.5,
     "totale_ore": 30
   },
   {
+    "id": 5,
     "nome": "CONTICELLI ANGELA",
-    "ore_giornaliere": {"2": "1.5", "3": "1.5", "4": "1.5", "5": "1.5", "6": "1.5", "27": "1.5"},
-    "totale_gg": 20,
+    "pin": "1005",
+    "ore_g": 1.5,
     "totale_ore": 30
   },
   {
+    "id": 6,
     "nome": "OVECI MARIANNA",
-    "ore_giornaliere": {"2": "1.5", "3": "1.5", "4": "1.5", "5": "1.5", "6": "1.5", "27": "1.5"},
-    "totale_gg": 20,
+    "pin": "1006",
+    "ore_g": 1.5,
     "totale_ore": 30
   },
   {
+    "id": 7,
     "nome": "LIPARI OSCAR",
-    "ore_giornaliere": {"2": "2", "3": "2", "4": "2", "5": "2", "6": "2", "27": "2"},
-    "totale_gg": 20,
+    "pin": "1007",
+    "ore_g": 2,
     "totale_ore": 40
   },
   {
+    "id": 8,
     "nome": "RIGGIO DOMENICO",
-    "ore_giornaliere": {"2": "2", "3": "2", "4": "2", "5": "2", "6": "2", "27": "2"},
-    "totale_gg": 20,
+    "pin": "1008",
+    "ore_g": 2,
     "totale_ore": 40
   },
   {
+    "id": 9,
     "nome": "FERRANTE IGNAZIO",
-    "ore_giornaliere": {"2": "2", "3": "2", "4": "224", "5": "22", "6": "2", "27": "2"},
-    "totale_gg": 20,
+    "pin": "1009",
+    "ore_g": 2,
     "totale_ore": 40
   },
   {
+    "id": 10,
     "nome": "SUCATO ROBERTO",
-    "ore_giornaliere": {"2": "2", "3": "2", "5": "2", "6": "2A", "27": "2"},
-    "totale_gg": 20,
+    "pin": "1010",
+    "ore_g": 2,
     "totale_ore": 40
   },
   {
+    "id": 11,
     "nome": "GIULIANO GIUSEPPE",
-    "ore_giornaliere": {"2": "A", "4": "A", "27": "A"},
-    "totale_gg": 0,
+    "pin": "1011",
+    "ore_g": 0,
     "totale_ore": 0
   },
   {
+    "id": 12,
     "nome": "VIOLA CATERINA",
-    "ore_giornaliere": {"2": "2", "3": "2", "4": "2", "5": "2", "6": "2", "27": "2"},
-    "totale_gg": 20,
+    "pin": "1012",
+    "ore_g": 2,
     "totale_ore": 40
   },
   {
+    "id": 13,
     "nome": "PANNIZZO ANTONY",
-    "ore_giornaliere": {"2": "6", "3": "6", "4": "6", "5": "6", "6": "6", "27": "6"},
-    "totale_gg": 20,
-    "totale_ore": 120,
-    "note": "Inserisci in busta acconto € 340"
-  },
-  {
-    "nome": "TESTAGROSSA LETIZIA",
-    "ore_giornaliere": {"2": "8", "3": "827", "4": "8", "5": "822", "6": "822", "27": "8"},
-    "totale_gg": 20,
-    "totale_ore": 160
-  },
-  {
-    "nome": "ARRANNO ELEONORA",
-    "ore_giornaliere": {"2": "2", "4": "2", "27": "2"},
-    "totale_gg": 16,
-    "totale_malattia": 3,
-    "totale_ore": 32
-  },
-  {
-    "nome": "BAGNASCO ELEONORA",
-    "ore_giornaliere": {"2": "2", "3": "2", "4": "2", "5": "2", "6": "2", "27": "2"},
-    "totale_gg": 14,
-    "totale_malattia": 5,
-    "totale_ore": 28
-  },
-  {
-    "nome": "CANE ROSA",
-    "ore_giornaliere": {"2": "2", "3": "2", "4": "2", "5": "2", "6": "2", "27": "2"},
-    "totale_gg": 20,
-    "totale_ore": 40
-  },
-  {
-    "nome": "CANNINO CARMELA",
-    "ore_giornaliere": {"2": "2", "3": "2", "4": "2", "5": "2", "6": "2", "27": "2"},
-    "totale_gg": 19,
-    "totale_ferie": 1,
-    "totale_ore": 38
-  },
-  {
-    "nome": "CATALDO ROSALIA",
-    "ore_giornaliere": {"2": "2", "3": "2", "4": "2", "5": "2", "6": "2", "27": "2"},
-    "totale_gg": 18,
-    "totale_malattia": 2,
-    "totale_ore": 36
-  },
-  {
-    "nome": "PEDALINO FRANCESCO",
-    "ore_giornaliere": {"2": "2", "3": "L.104", "4": "2", "5": "2", "6": "2", "27": "L.104"},
-    "totale_gg": 16,
-    "totale_ferie": 1,
-    "totale_ore": 32
-  },
-  {
-    "nome": "BATTAGLIA VANESSA",
-    "ore_giornaliere": {"2": "1", "3": "1", "4": "1", "5": "1", "6": "1", "27": "1"},
-    "totale_gg": 20,
-    "totale_ore": 20
-  },
-  {
-    "nome": "BONOMOLO SALVATORE",
-    "ore_giornaliere": {"2": "8", "3": "8", "4": "8", "5": "8", "6": "8", "27": "8"},
-    "totale_gg": 20,
-    "totale_ore": 160
-  },
-  {
-    "nome": "BUSCEMI DANIELE",
-    "ore_giornaliere": {"2": "8", "3": "8", "4": "8", "5": "8", "6": "8", "27": "8"},
-    "totale_gg": 20,
-    "totale_ore": 160
-  },
-  {
-    "nome": "MUHAMMAD ABU ZAID",
-    "ore_giornaliere": {"2": "6", "3": "6", "4": "6", "5": "6", "6": "6", "27": "6"},
-    "totale_gg": 20,
+    "pin": "1013",
+    "ore_g": 6,
     "totale_ore": 120
   },
   {
+    "id": 14,
+    "nome": "TESTAGROSSA LETIZIA",
+    "pin": "1014",
+    "ore_g": 8,
+    "totale_ore": 160
+  },
+  {
+    "id": 15,
+    "nome": "ARRANNO ELEONORA",
+    "pin": "1015",
+    "ore_g": 2,
+    "totale_ore": 32
+  },
+  {
+    "id": 16,
+    "nome": "BAGNASCO ELEONORA",
+    "pin": "1016",
+    "ore_g": 2,
+    "totale_ore": 28
+  },
+  {
+    "id": 17,
+    "nome": "CANE ROSA",
+    "pin": "1017",
+    "ore_g": 2,
+    "totale_ore": 40
+  },
+  {
+    "id": 18,
+    "nome": "CANNINO CARMELA",
+    "pin": "1018",
+    "ore_g": 2,
+    "totale_ore": 38
+  },
+  {
+    "id": 19,
+    "nome": "CATALDO ROSALIA",
+    "pin": "1019",
+    "ore_g": 2,
+    "totale_ore": 36
+  },
+  {
+    "id": 20,
+    "nome": "PEDALINO FRANCESCO",
+    "pin": "1020",
+    "ore_g": 2,
+    "totale_ore": 32
+  },
+  {
+    "id": 21,
+    "nome": "BATTAGLIA VANESSA",
+    "pin": "1021",
+    "ore_g": 1,
+    "totale_ore": 20
+  },
+  {
+    "id": 22,
+    "nome": "BONOMOLO SALVATORE",
+    "pin": "1022",
+    "ore_g": 8,
+    "totale_ore": 160
+  },
+  {
+    "id": 23,
+    "nome": "BUSCEMI DANIELE",
+    "pin": "1023",
+    "ore_g": 8,
+    "totale_ore": 160
+  },
+  {
+    "id": 24,
+    "nome": "MUHAMMAD ABU ZAID",
+    "pin": "1024",
+    "ore_g": 6,
+    "totale_ore": 120
+  },
+  {
+    "id": 25,
     "nome": "ALAM MD KHURSHED",
-    "ore_giornaliere": {"2": "3", "3": "3", "4": "3", "5": "3", "6": "3", "27": "3"},
-    "totale_gg": 20,
+    "pin": "1025",
+    "ore_g": 3,
     "totale_ore": 60
   },
   {
+    "id": 26,
     "nome": "BOTTA NICOLA",
-    "ore_giornaliere": {"2": "1.75", "3": "M", "4": "M", "5": "M", "6": "1.75", "27": "1.75"},
-    "totale_gg": 17,
-    "totale_malattia": 3,
+    "pin": "1026",
+    "ore_g": 1.75,
     "totale_ore": 29.75
   },
   {
+    "id": 27,
     "nome": "DONATO GIUSEPPA",
-    "ore_giornaliere": {"2": "1.75", "3": "1.75", "4": "1.75", "5": "1.75", "6": "1.75", "27": "1.75"},
-    "totale_gg": 20,
+    "pin": "1027",
+    "ore_g": 1.75,
     "totale_ore": 35
   },
   {
+    "id": 28,
     "nome": "MARANGIO MARIA ASSUNTA",
-    "ore_giornaliere": {"2": "1.1", "3": "1.1", "4": "1.1", "5": "1.1", "6": "1.1", "27": "1.1"},
-    "totale_gg": 20,
+    "pin": "1028",
+    "ore_g": 1.1,
     "totale_ore": 22
   },
   {
+    "id": 29,
     "nome": "PATELLA SILVANA",
-    "ore_giornaliere": {"2": "1.75", "3": "1.75", "4": "1.75", "5": "1.75", "6": "1.75", "27": "1.75"},
-    "totale_gg": 20,
+    "pin": "1029",
+    "ore_g": 1.75,
     "totale_ore": 35
   },
   {
+    "id": 30,
     "nome": "SARDIGNA FRANCESCO",
-    "ore_giornaliere": {"2": "1.1", "3": "1.1", "4": "1.1", "5": "1.1", "6": "1.1", "27": "1.1"},
-    "totale_gg": 20,
+    "pin": "1030",
+    "ore_g": 1.1,
     "totale_ore": 22
   },
   {
+    "id": 31,
     "nome": "TIBAUDO LOREDANA",
-    "ore_giornaliere": {"2": "1.75", "3": "1.75", "4": "1.75", "5": "1.75", "6": "1.75", "27": "1.75"},
-    "totale_gg": 20,
+    "pin": "1031",
+    "ore_g": 1.75,
     "totale_ore": 35
   },
   {
+    "id": 32,
     "nome": "MARTINES GABRIELE",
-    "ore_giornaliere": {"24": "8", "25": "8", "26": "8", "27": "8"},
-    "totale_gg": 4,
+    "pin": "1032",
+    "ore_g": 8,
     "totale_ore": 32
   }
 ]
