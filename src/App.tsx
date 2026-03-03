@@ -23,7 +23,18 @@ import {
 import { api } from './services/api';
 import { Employee, Attendance, CalendarOverride, Note } from './types';
 import datiDipendenti from './dipendenti.json';
-
+// --- Configurazione Cantieri e Assegnazioni ---
+const CONFIG_CANTIERI = [
+  {
+    id: "bonomo_4",
+    nome: "Ass.For.Seo - Via Bonomo",
+    indirizzo: "Via G. Bonomo, 4, Palermo",
+    lat: 38.1311,
+    lng: 13.3552,
+    raggio: 0.15, // Riconosce il dipendente nel raggio di 150 metri
+    dipendentiAssegnati: ["MARINO MARIA ROSA"]
+  }
+];
 // --- Componenti di Utilità ---
 const Badge = ({ children, color = 'accent' }: { children: React.ReactNode, color?: string }) => (
   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-${color}/10 text-${color} border border-${color}/20`}>
