@@ -1,14 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, LogOut, Users, AlertCircle, Calendar, CheckCircle } from 'lucide-react';
+import { Clock, LogOut, Users, AlertCircle, Calendar, MapPin } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
-// ─── SUPABASE ─────────────────────────────────────────────────────────────────
+// Fix icone Leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
+
 const supabase = createClient(
   'https://lzgjrxptcblfbfmyleey.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6Z2pyeHB0Y2JsZmJmbXlsZWV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NTE1ODgsImV4cCI6MjA4ODEyNzU4OH0.DrFFUtZ9NDjag7SAegxYkwB1xEOELbmNL4tZhgg50OA'
 );
 
-// ─── DATI DIPENDENTI ──────────────────────────────────────────────────────────
 const datiDipendenti = [
   { id: 1,  nome: "MARINO MARIA ROSA",     pin: "1001", ore_g: 0.5,  totale_ore: 8 },
   { id: 2,  nome: "DOMINO ENRICA",          pin: "1002", ore_g: 5,    totale_ore: 100 },
@@ -71,7 +80,6 @@ const MESI = [
   { label: "Dicembre 2026",  anno: 2026, mese: 11, giorni: 31 },
 ];
 
-// ─── Card Statistica ──────────────────────────────────────────────────────────
 const Card = ({ title, subtitle, icon: Icon, color }: any) => (
   <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 relative overflow-hidden">
     <div className={`absolute top-0 left-0 right-0 h-1 ${color}`} />
@@ -85,13 +93,11 @@ const Card = ({ title, subtitle, icon: Icon, color }: any) => (
   </div>
 );
 
-// ─── Calendario con dati reali Supabase ───────────────────────────────────────
 const CalendarioMensile = ({ dipendente, meseInfo, presenzeMese }: any) => {
   const { giorni, anno, mese } = meseInfo;
   const primoGiorno = new Date(anno, mese, 1).getDay();
   const offset = primoGiorno === 0 ? 6 : primoGiorno - 1;
 
-  // Costruisce mappa giorno → {entrata, uscita}
   const giornoMap: Record<number, { entrata?: string; uscita?: string }> = {};
   presenzeMese
     .filter((p: any) => p.dipendente_id === dipendente.id)
@@ -108,9 +114,7 @@ const CalendarioMensile = ({ dipendente, meseInfo, presenzeMese }: any) => {
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
       <div className="flex items-start justify-between mb-3 gap-2">
         <h4 className="font-bold text-white text-[11px] leading-tight">{dipendente.nome}</h4>
-        <span className="text-emerald-400 font-bold text-xs whitespace-nowrap">
-          {giorniPresenti} giorni
-        </span>
+        <span className="text-emerald-400 font-bold text-xs whitespace-nowrap">{giorniPresenti} giorni</span>
       </div>
       <div className="grid grid-cols-7 gap-0.5 mb-0.5">
         {['L','M','M','G','V','S','D'].map((g, i) => (
@@ -131,8 +135,7 @@ const CalendarioMensile = ({ dipendente, meseInfo, presenzeMese }: any) => {
                 ${isWeekend ? 'bg-slate-800/20 text-slate-700'
                   : hasEntrata && hasUscita ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
                   : hasEntrata ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                  : 'bg-slate-800/40 text-slate-600'}`}
-            >
+                  : 'bg-slate-800/40 text-slate-600'}`}>
               <span className="text-[7px] opacity-60 leading-none">{giorno}</span>
               {!isWeekend && (
                 <span className="text-[8px] leading-none">
@@ -152,73 +155,157 @@ const CalendarioMensile = ({ dipendente, meseInfo, presenzeMese }: any) => {
           <div className="w-2 h-2 rounded-sm bg-yellow-500/20 border border-yellow-500/30" />
           <span className="text-[8px] text-slate-600">Solo entrata</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-sm bg-slate-800/40" />
-          <span className="text-[8px] text-slate-600">Assente</span>
-        </div>
       </div>
     </div>
   );
 };
 
-// ─── APP PRINCIPALE ───────────────────────────────────────────────────────────
+// ─── Mappa timbrature ─────────────────────────────────────────────────────────
+const MappaPresenze = ({ presenze }: { presenze: any[] }) => {
+  const conGps = presenze.filter(p => p.latitudine && p.longitudine);
+
+  if (conGps.length === 0) return (
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center">
+      <MapPin className="mx-auto mb-3 text-slate-600" size={32} />
+      <p className="text-slate-500 text-sm">Nessuna timbratura con GPS disponibile</p>
+      <p className="text-slate-600 text-xs mt-1">Le nuove timbrature includeranno la posizione</p>
+    </div>
+  );
+
+  const centro: [number, number] = [
+    conGps.reduce((s, p) => s + p.latitudine, 0) / conGps.length,
+    conGps.reduce((s, p) => s + p.longitudine, 0) / conGps.length,
+  ];
+
+  // Icone colorate per entrata/uscita
+  const iconaEntrata = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34],
+  });
+  const iconaUscita = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34],
+  });
+
+  return (
+    <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+      <div className="p-4 flex items-center justify-between">
+        <h3 className="font-bold text-white flex items-center gap-2">
+          <MapPin size={16} className="text-emerald-400" />
+          Mappa Timbrature
+        </h3>
+        <div className="flex gap-3 text-xs">
+          <span className="flex items-center gap-1 text-emerald-400">● Entrata</span>
+          <span className="flex items-center gap-1 text-rose-400">● Uscita</span>
+        </div>
+      </div>
+      <MapContainer center={centro} zoom={13} style={{ height: '450px', width: '100%' }}>
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; OpenStreetMap contributors'
+        />
+        {conGps.map((p: any) => (
+          <Marker
+            key={p.id}
+            position={[p.latitudine, p.longitudine]}
+            icon={p.tipo === 'entrata' ? iconaEntrata : iconaUscita}
+          >
+            <Popup>
+              <div className="text-xs">
+                <p className="font-bold">{p.nome}</p>
+                <p className="capitalize">{p.tipo} — {new Date(p.timestamp).toLocaleString('it-IT')}</p>
+                {p.indirizzo && <p className="text-gray-500 mt-1">{p.indirizzo}</p>}
+                <p className="text-gray-400 mt-1">{p.latitudine?.toFixed(5)}, {p.longitudine?.toFixed(5)}</p>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </div>
+  );
+};
+
 export default function App() {
   const [user, setUser] = useState<any>(null);
   const [pin, setPin] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedDip, setSelectedDip] = useState<any>(null);
-  const [adminView, setAdminView] = useState<'lista' | 'calendario'>('lista');
-  const [meseSelIdx, setMeseSelIdx] = useState(14); // Marzo 2026
-
-  // Dati Supabase
+  const [adminView, setAdminView] = useState<'lista' | 'calendario' | 'mappa'>('lista');
+  const [meseSelIdx, setMeseSelIdx] = useState(14);
   const [presenze, setPresenze] = useState<any[]>([]);
-  const [ultimePresenze, setUltimePresenze] = useState<any[]>([]); // per la lista admin
+  const [ultimePresenze, setUltimePresenze] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<'entrata' | 'uscita' | null>(null);
+  const [gpsError, setGpsError] = useState('');
 
   const meseInfo = MESI[meseSelIdx];
 
-  // ── Carica presenze del mese selezionato (admin) ──────────────────────────
   useEffect(() => {
     if (!isAdmin) return;
     const { anno, mese } = meseInfo;
     const dataInizio = new Date(anno, mese, 1).toISOString();
     const dataFine   = new Date(anno, mese + 1, 0, 23, 59, 59).toISOString();
-
-    supabase
-      .from('presenze')
-      .select('*')
-      .gte('timestamp', dataInizio)
-      .lte('timestamp', dataFine)
+    supabase.from('presenze').select('*')
+      .gte('timestamp', dataInizio).lte('timestamp', dataFine)
       .order('timestamp', { ascending: false })
-      .then(({ data }) => {
-        if (data) setPresenze(data);
-      });
+      .then(({ data }) => { if (data) setPresenze(data); });
   }, [isAdmin, meseSelIdx]);
 
-  // ── Carica ultima timbratura per ogni dipendente (per stato in lista) ─────
   useEffect(() => {
     if (!isAdmin) return;
-    supabase
-      .from('presenze')
-      .select('*')
+    supabase.from('presenze').select('*')
       .order('timestamp', { ascending: false })
-      .then(({ data }) => {
-        if (data) setUltimePresenze(data);
-      });
+      .then(({ data }) => { if (data) setUltimePresenze(data); });
   }, [isAdmin, presenze]);
 
-  // ── Timbratura dipendente ─────────────────────────────────────────────────
+  const getPosizioneGPS = (): Promise<{ lat: number; lng: number }> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject('GPS non supportato dal dispositivo');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => reject('Impossibile ottenere la posizione GPS: ' + err.message),
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    });
+  };
+
   const timbra = async (tipo: 'entrata' | 'uscita') => {
     if (!user || loading) return;
     setLoading(true);
+    setGpsError('');
+
+    let lat = null, lng = null, indirizzo = null;
+
+    try {
+      const pos = await getPosizioneGPS();
+      lat = pos.lat;
+      lng = pos.lng;
+      // Reverse geocoding con OpenStreetMap
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+        const data = await res.json();
+        indirizzo = data.display_name || null;
+      } catch { /* indirizzo opzionale */ }
+    } catch (err: any) {
+      setGpsError(err.toString());
+    }
+
     const { error } = await supabase.from('presenze').insert({
       dipendente_id: user.id,
       nome: user.nome,
       tipo,
       timestamp: new Date().toISOString(),
       data: new Date().toISOString().split('T')[0],
+      latitudine: lat,
+      longitudine: lng,
+      indirizzo,
     });
+
     setLoading(false);
     if (!error) {
       setFeedback(tipo);
@@ -228,7 +315,6 @@ export default function App() {
     }
   };
 
-  // Restituisce l'ultima timbratura di un dipendente
   const getStatoDipendente = (id: number) => {
     const ultima = ultimePresenze.find(p => p.dipendente_id === id);
     return ultima ? ultima.tipo : null;
@@ -266,9 +352,7 @@ export default function App() {
   // ── ADMIN ─────────────────────────────────────────────────────────────────
   if (isAdmin) {
     const dipPresentiOggi = new Set(
-      presenze
-        .filter(p => p.data === new Date().toISOString().split('T')[0])
-        .map(p => p.dipendente_id)
+      presenze.filter(p => p.data === new Date().toISOString().split('T')[0]).map(p => p.dipendente_id)
     ).size;
 
     return (
@@ -283,7 +367,7 @@ export default function App() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Card title="Dipendenti Totali" subtitle={datiDipendenti.length} icon={Users} color="bg-blue-500" />
-          <Card title="Presenti Oggi" subtitle={dipPresentiOggi} icon={CheckCircle} color="bg-emerald-500" />
+          <Card title="Presenti Oggi" subtitle={dipPresentiOggi} icon={AlertCircle} color="bg-emerald-500" />
           <Card title="Timbrature Mese" subtitle={presenze.length} icon={Clock} color="bg-violet-500" />
         </div>
 
@@ -296,6 +380,10 @@ export default function App() {
           <button onClick={() => setAdminView('calendario')}
             className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${adminView === 'calendario' ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
             Calendari Presenze
+          </button>
+          <button onClick={() => setAdminView('mappa')}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${adminView === 'mappa' ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
+            <MapPin size={14} className="inline mr-2" />Mappa GPS
           </button>
           <div className="flex items-center gap-2 ml-auto">
             <span className="text-slate-400 text-sm">Mese:</span>
@@ -316,6 +404,7 @@ export default function App() {
                   <th className="p-4">Nome</th>
                   <th className="p-4">PIN</th>
                   <th className="p-4">Ultima Timbratura</th>
+                  <th className="p-4">Posizione</th>
                   <th className="p-4">Stato</th>
                   <th className="p-4">Dettaglio</th>
                 </tr>
@@ -330,9 +419,18 @@ export default function App() {
                       <td className="p-4 font-bold text-xs">{d.nome}</td>
                       <td className="p-4 text-emerald-400 font-mono text-xs">{d.pin}</td>
                       <td className="p-4 text-slate-400 text-xs">
-                        {ultimaRec
-                          ? new Date(ultimaRec.timestamp).toLocaleString('it-IT')
-                          : '—'}
+                        {ultimaRec ? new Date(ultimaRec.timestamp).toLocaleString('it-IT') : '—'}
+                      </td>
+                      <td className="p-4 text-xs">
+                        {ultimaRec?.latitudine ? (
+                          <button
+                            onClick={() => setAdminView('mappa')}
+                            className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                          >
+                            <MapPin size={12} />
+                            <span>{ultimaRec.latitudine.toFixed(4)}, {ultimaRec.longitudine.toFixed(4)}</span>
+                          </button>
+                        ) : <span className="text-slate-600">—</span>}
                       </td>
                       <td className="p-4">
                         <span className={`text-[10px] px-2 py-1 rounded font-bold ${
@@ -376,6 +474,9 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {/* Mappa */}
+        {adminView === 'mappa' && <MappaPresenze presenze={presenze} />}
       </div>
     );
   }
@@ -388,15 +489,18 @@ export default function App() {
         <button onClick={handleLogout} className="p-2 bg-slate-800 rounded-lg"><LogOut size={20} /></button>
       </div>
 
-      {/* Feedback timbratura */}
       {feedback && (
-        <div className={`mb-6 p-4 rounded-2xl text-center font-bold text-lg animate-pulse
+        <div className={`mb-6 p-4 rounded-2xl text-center font-bold text-lg
           ${feedback === 'entrata' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
           : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}`}>
           ✓ {feedback === 'entrata' ? 'Entrata registrata!' : 'Uscita registrata!'}
-          <p className="text-sm font-normal mt-1 opacity-70">
-            {new Date().toLocaleTimeString('it-IT')}
-          </p>
+          <p className="text-sm font-normal mt-1 opacity-70">{new Date().toLocaleTimeString('it-IT')}</p>
+        </div>
+      )}
+
+      {gpsError && (
+        <div className="mb-4 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs">
+          ⚠️ {gpsError} — la timbratura è stata registrata senza posizione GPS.
         </div>
       )}
 
@@ -412,19 +516,19 @@ export default function App() {
       </div>
 
       <div className="space-y-4">
-        <button
-          onClick={() => timbra('entrata')}
-          disabled={loading}
+        <button onClick={() => timbra('entrata')} disabled={loading}
           className="w-full h-36 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 rounded-[2rem] font-black text-2xl shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">
-          {loading ? '...' : 'ENTRATA'}
+          {loading ? '📍 Rilevamento GPS...' : 'ENTRATA'}
         </button>
-        <button
-          onClick={() => timbra('uscita')}
-          disabled={loading}
+        <button onClick={() => timbra('uscita')} disabled={loading}
           className="w-full h-36 bg-rose-500 hover:bg-rose-600 disabled:opacity-50 rounded-[2rem] font-black text-2xl shadow-xl shadow-rose-500/20 active:scale-95 transition-all">
-          {loading ? '...' : 'USCITA'}
+          {loading ? '📍 Rilevamento GPS...' : 'USCITA'}
         </button>
       </div>
+
+      <p className="text-center text-slate-600 text-xs mt-6 flex items-center justify-center gap-1">
+        <MapPin size={10} /> La posizione GPS viene registrata ad ogni timbratura
+      </p>
     </div>
   );
 }
