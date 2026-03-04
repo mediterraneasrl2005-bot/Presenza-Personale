@@ -269,7 +269,7 @@ export default function App() {
       navigator.geolocation.getCurrentPosition(
         (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
         (err) => reject('Impossibile ottenere la posizione GPS: ' + err.message),
-        { enableHighAccuracy: true, timeout: 10000 }
+    { enableHighAccuracy: false, timeout: 30000, maximumAge: 60000 }
       );
     });
   };
