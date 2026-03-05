@@ -586,3 +586,5 @@ const [tipoTimbraturaPending, setTipoTimbraturaPending] = useState<'entrata'|'us
     </button>
   </div>
 )}
+);
+}
