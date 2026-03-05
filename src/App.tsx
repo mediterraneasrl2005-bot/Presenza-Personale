@@ -228,6 +228,10 @@ const MappaPresenze = ({ presenze }: { presenze: any[] }) => {
 };
 
 export default function App() {
+  const [cantieri, setCantieri] = useState<any[]>([]);
+const [cantiereSelezionato, setCantiereSelezionato] = useState<any>(null);
+const [mostraSceltaCantiere, setMostraSceltaCantiere] = useState(false);
+const [tipoTimbraturaPending, setTipoTimbraturaPending] = useState<'entrata'|'uscita'|null>(null);
   const [user, setUser] = useState<any>(null);
   const [pin, setPin] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
@@ -261,6 +265,14 @@ export default function App() {
       .then(({ data }) => { if (data) setUltimePresenze(data); });
   }, [isAdmin, presenze]);
 
+  useEffect(() => {
+  if (!user) return;
+  supabase.from('cantieri').select('*')
+    .eq('attivo', true)
+    .order('nome')
+    .then(({ data }) => { if (data) setCantieri(data); });
+}, [user]);
+
   const getPosizioneGPS = (): Promise<{ lat: number; lng: number }> => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
@@ -283,46 +295,47 @@ export default function App() {
     });
   };
 
-  const timbra = async (tipo: 'entrata' | 'uscita') => {
-    if (!user || loading) return;
-    setLoading(true);
-    setGpsError('');
+  const timbra = async (tipo: 'entrata' | 'uscita', cantiere: any) => {
+  if (!user || loading) return;
+  setLoading(true);
+  setGpsError('');
+  setMostraSceltaCantiere(false);
 
-    let lat = null, lng = null, indirizzo = null;
-
+  let lat = null, lng = null, indirizzo = null;
+  try {
+    const pos = await getPosizioneGPS();
+    lat = pos.lat; lng = pos.lng;
     try {
-      const pos = await getPosizioneGPS();
-      lat = pos.lat;
-      lng = pos.lng;
-      // Reverse geocoding con OpenStreetMap
-      try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
-        const data = await res.json();
-        indirizzo = data.display_name || null;
-      } catch { /* indirizzo opzionale */ }
-    } catch (err: any) {
-      setGpsError(err.toString());
-    }
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+      const data = await res.json();
+      indirizzo = data.display_name || null;
+    } catch { }
+  } catch (err: any) {
+    setGpsError(err.toString());
+  }
 
-    const { error } = await supabase.from('presenze').insert({
-      dipendente_id: user.id,
-      nome: user.nome,
-      tipo,
-      timestamp: new Date().toISOString(),
-      data: new Date().toISOString().split('T')[0],
-      latitudine: lat,
-      longitudine: lng,
-      indirizzo,
-    });
+  const { error } = await supabase.from('presenze').insert({
+    dipendente_id: user.id,
+    nome: user.nome,
+    tipo,
+    timestamp: new Date().toISOString(),
+    data: new Date().toISOString().split('T')[0],
+    latitudine: lat,
+    longitudine: lng,
+    indirizzo,
+    cantiere_id: cantiere.id,
+    cantiere_nome: cantiere.nome,
+  });
 
-    setLoading(false);
-    if (!error) {
-      setFeedback(tipo);
-      setTimeout(() => setFeedback(null), 3000);
-    } else {
-      alert('Errore nella timbratura. Riprova.');
-    }
-  };
+  setLoading(false);
+  if (!error) {
+    setFeedback(tipo);
+    setCantiereSelezionato(cantiere);
+    setTimeout(() => setFeedback(null), 3000);
+  } else {
+    alert('Errore nella timbratura. Riprova.');
+  }
+};
 
   const getStatoDipendente = (id: number) => {
     const ultima = ultimePresenze.find(p => p.dipendente_id === id);
@@ -530,51 +543,46 @@ export default function App() {
         </div>
       </div>
 
-      {/* Pulsante attiva GPS - visibile solo se GPS non ancora attivo */}
-      {!gpsAttivo && (
-        <div className="mb-6">
-          <button
-            onClick={attivaGPS}
-            className="w-full p-4 bg-blue-500/20 border-2 border-blue-500/40 hover:bg-blue-500/30 rounded-2xl text-blue-400 font-bold text-lg transition-all flex items-center justify-center gap-3"
-          >
-            <MapPin size={24} />
-            ATTIVA POSIZIONE GPS
-          </button>
-          <p className="text-center text-slate-500 text-xs mt-2">
-            Necessario per registrare la posizione alla timbratura
-          </p>
-          {gpsError && (
-            <div className="mt-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs text-center">
-              ⚠️ {gpsError}
-            </div>
-          )}
-        </div>
-      )}
-
-      {gpsAttivo && (
-        <div className="mb-6 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs text-center flex items-center justify-center gap-2">
-          <MapPin size={14} /> Posizione GPS attiva ✓
-        </div>
-      )}
-
-      <div className="space-y-4">
+      {/* Scelta cantiere */}
+{mostraSceltaCantiere && (
+  <div className="mb-6 bg-slate-800 border border-slate-700 rounded-2xl p-4">
+    <h3 className="font-bold text-white mb-3 text-center">
+      {tipoTimbraturaPending === 'entrata' ? '🟢 ENTRATA' : '🔴 USCITA'} — Scegli il cantiere
+    </h3>
+    <div className="space-y-2 max-h-64 overflow-y-auto">
+      {cantieri.map(c => (
         <button
-          onClick={() => timbra('entrata')}
-          disabled={loading}
-          className="w-full h-36 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 rounded-[2rem] font-black text-2xl shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">
-          {loading ? '📍 Registrazione...' : 'ENTRATA'}
+          key={c.id}
+          onClick={() => timbra(tipoTimbraturaPending!, c)}
+          className="w-full p-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-left transition-colors"
+        >
+          <p className="font-bold text-white text-sm">{c.nome}</p>
+          {c.indirizzo && <p className="text-slate-400 text-xs">{c.indirizzo}</p>}
         </button>
-        <button
-          onClick={() => timbra('uscita')}
-          disabled={loading}
-          className="w-full h-36 bg-rose-500 hover:bg-rose-600 disabled:opacity-50 rounded-[2rem] font-black text-2xl shadow-xl shadow-rose-500/20 active:scale-95 transition-all">
-          {loading ? '📍 Registrazione...' : 'USCITA'}
-        </button>
-      </div>
-
-      <p className="text-center text-slate-600 text-xs mt-6 flex items-center justify-center gap-1">
-        <MapPin size={10} /> La posizione GPS viene registrata ad ogni timbratura
-      </p>
+      ))}
     </div>
-  );
-  }
+    <button
+      onClick={() => setMostraSceltaCantiere(false)}
+      className="w-full mt-3 p-2 text-slate-500 text-sm hover:text-slate-300"
+    >
+      Annulla
+    </button>
+  </div>
+)}
+
+{!mostraSceltaCantiere && (
+  <div className="space-y-4">
+    <button
+      onClick={() => { setTipoTimbraturaPending('entrata'); setMostraSceltaCantiere(true); }}
+      disabled={loading}
+      className="w-full h-36 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 rounded-[2rem] font-black text-2xl shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">
+      {loading ? '📍 Registrazione...' : 'ENTRATA'}
+    </button>
+    <button
+      onClick={() => { setTipoTimbraturaPending('uscita'); setMostraSceltaCantiere(true); }}
+      disabled={loading}
+      className="w-full h-36 bg-rose-500 hover:bg-rose-600 disabled:opacity-50 rounded-[2rem] font-black text-2xl shadow-xl shadow-rose-500/20 active:scale-95 transition-all">
+      {loading ? '📍 Registrazione...' : 'USCITA'}
+    </button>
+  </div>
+)}
