@@ -5,7 +5,6 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Fix icone Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
@@ -97,7 +96,6 @@ const CalendarioMensile = ({ dipendente, meseInfo, presenzeMese }: any) => {
   const { giorni, anno, mese } = meseInfo;
   const primoGiorno = new Date(anno, mese, 1).getDay();
   const offset = primoGiorno === 0 ? 6 : primoGiorno - 1;
-
   const giornoMap: Record<number, { entrata?: string; uscita?: string }> = {};
   presenzeMese
     .filter((p: any) => p.dipendente_id === dipendente.id)
@@ -107,9 +105,7 @@ const CalendarioMensile = ({ dipendente, meseInfo, presenzeMese }: any) => {
       if (p.tipo === 'entrata') giornoMap[giorno].entrata = p.timestamp;
       if (p.tipo === 'uscita')  giornoMap[giorno].uscita  = p.timestamp;
     });
-
   const giorniPresenti = Object.keys(giornoMap).length;
-
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4">
       <div className="flex items-start justify-between mb-3 gap-2">
@@ -130,18 +126,14 @@ const CalendarioMensile = ({ dipendente, meseInfo, presenzeMese }: any) => {
           const hasEntrata = !!presenza?.entrata;
           const hasUscita  = !!presenza?.uscita;
           return (
-            <div key={giorno} title={`${giorno}: ${hasEntrata ? 'Entrata ✓' : ''} ${hasUscita ? 'Uscita ✓' : ''}`}
+            <div key={giorno}
               className={`aspect-square rounded flex flex-col items-center justify-center cursor-default
                 ${isWeekend ? 'bg-slate-800/20 text-slate-700'
                   : hasEntrata && hasUscita ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
                   : hasEntrata ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
                   : 'bg-slate-800/40 text-slate-600'}`}>
               <span className="text-[7px] opacity-60 leading-none">{giorno}</span>
-              {!isWeekend && (
-                <span className="text-[8px] leading-none">
-                  {hasEntrata && hasUscita ? '✓' : hasEntrata ? '→' : ''}
-                </span>
-              )}
+              {!isWeekend && <span className="text-[8px] leading-none">{hasEntrata && hasUscita ? '✓' : hasEntrata ? '→' : ''}</span>}
             </div>
           );
         })}
@@ -160,24 +152,18 @@ const CalendarioMensile = ({ dipendente, meseInfo, presenzeMese }: any) => {
   );
 };
 
-// ─── Mappa timbrature ─────────────────────────────────────────────────────────
 const MappaPresenze = ({ presenze }: { presenze: any[] }) => {
   const conGps = presenze.filter(p => p.latitudine && p.longitudine);
-
   if (conGps.length === 0) return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center">
       <MapPin className="mx-auto mb-3 text-slate-600" size={32} />
       <p className="text-slate-500 text-sm">Nessuna timbratura con GPS disponibile</p>
-      <p className="text-slate-600 text-xs mt-1">Le nuove timbrature includeranno la posizione</p>
     </div>
   );
-
   const centro: [number, number] = [
     conGps.reduce((s, p) => s + p.latitudine, 0) / conGps.length,
     conGps.reduce((s, p) => s + p.longitudine, 0) / conGps.length,
   ];
-
-  // Icone colorate per entrata/uscita
   const iconaEntrata = new L.Icon({
     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
@@ -188,13 +174,11 @@ const MappaPresenze = ({ presenze }: { presenze: any[] }) => {
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
     iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34],
   });
-
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
       <div className="p-4 flex items-center justify-between">
         <h3 className="font-bold text-white flex items-center gap-2">
-          <MapPin size={16} className="text-emerald-400" />
-          Mappa Timbrature
+          <MapPin size={16} className="text-emerald-400" />Mappa Timbrature
         </h3>
         <div className="flex gap-3 text-xs">
           <span className="flex items-center gap-1 text-emerald-400">● Entrata</span>
@@ -202,22 +186,15 @@ const MappaPresenze = ({ presenze }: { presenze: any[] }) => {
         </div>
       </div>
       <MapContainer center={centro} zoom={13} style={{ height: '450px', width: '100%' }}>
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; OpenStreetMap contributors'
-        />
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap contributors' />
         {conGps.map((p: any) => (
-          <Marker
-            key={p.id}
-            position={[p.latitudine, p.longitudine]}
-            icon={p.tipo === 'entrata' ? iconaEntrata : iconaUscita}
-          >
+          <Marker key={p.id} position={[p.latitudine, p.longitudine]} icon={p.tipo === 'entrata' ? iconaEntrata : iconaUscita}>
             <Popup>
               <div className="text-xs">
                 <p className="font-bold">{p.nome}</p>
                 <p className="capitalize">{p.tipo} — {new Date(p.timestamp).toLocaleString('it-IT')}</p>
+                {p.cantiere_nome && <p className="text-blue-600 mt-1">🏗️ {p.cantiere_nome}</p>}
                 {p.indirizzo && <p className="text-gray-500 mt-1">{p.indirizzo}</p>}
-                <p className="text-gray-400 mt-1">{p.latitudine?.toFixed(5)}, {p.longitudine?.toFixed(5)}</p>
               </div>
             </Popup>
           </Marker>
@@ -228,10 +205,6 @@ const MappaPresenze = ({ presenze }: { presenze: any[] }) => {
 };
 
 export default function App() {
-  const [cantieri, setCantieri] = useState<any[]>([]);
-const [cantiereSelezionato, setCantiereSelezionato] = useState<any>(null);
-const [mostraSceltaCantiere, setMostraSceltaCantiere] = useState(false);
-const [tipoTimbraturaPending, setTipoTimbraturaPending] = useState<'entrata'|'uscita'|null>(null);
   const [user, setUser] = useState<any>(null);
   const [pin, setPin] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
@@ -241,9 +214,12 @@ const [tipoTimbraturaPending, setTipoTimbraturaPending] = useState<'entrata'|'us
   const [presenze, setPresenze] = useState<any[]>([]);
   const [ultimePresenze, setUltimePresenze] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [gpsAttivo, setGpsAttivo] = useState(false);
   const [feedback, setFeedback] = useState<'entrata' | 'uscita' | null>(null);
   const [gpsError, setGpsError] = useState('');
+  const [gpsAttivo, setGpsAttivo] = useState(false);
+  const [cantieri, setCantieri] = useState<any[]>([]);
+  const [mostraSceltaCantiere, setMostraSceltaCantiere] = useState(false);
+  const [tipoTimbraturaPending, setTipoTimbraturaPending] = useState<'entrata' | 'uscita' | null>(null);
 
   const meseInfo = MESI[meseSelIdx];
 
@@ -266,24 +242,18 @@ const [tipoTimbraturaPending, setTipoTimbraturaPending] = useState<'entrata'|'us
   }, [isAdmin, presenze]);
 
   useEffect(() => {
-  if (!user) return;
-  supabase.from('cantieri').select('*')
-    .eq('attivo', true)
-    .order('nome')
-    .then(({ data }) => { if (data) setCantieri(data); });
-}, [user]);
+    if (!user || isAdmin) return;
+    supabase.from('cantieri').select('*')
+      .eq('attivo', true).order('nome')
+      .then(({ data }) => { if (data) setCantieri(data); });
+  }, [user]);
 
   const getPosizioneGPS = (): Promise<{ lat: number; lng: number }> => {
     return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject('GPS non supportato dal dispositivo');
-        return;
-      }
-      // Primo tentativo veloce senza alta precisione
+      if (!navigator.geolocation) { reject('GPS non supportato'); return; }
       navigator.geolocation.getCurrentPosition(
         (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
         () => {
-          // Secondo tentativo con impostazioni diverse per Safari iOS
           navigator.geolocation.getCurrentPosition(
             (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
             (err) => reject('Impossibile ottenere la posizione GPS: ' + err.message),
@@ -295,47 +265,54 @@ const [tipoTimbraturaPending, setTipoTimbraturaPending] = useState<'entrata'|'us
     });
   };
 
-  const timbra = async (tipo: 'entrata' | 'uscita', cantiere: any) => {
-  if (!user || loading) return;
-  setLoading(true);
-  setGpsError('');
-  setMostraSceltaCantiere(false);
-
-  let lat = null, lng = null, indirizzo = null;
-  try {
-    const pos = await getPosizioneGPS();
-    lat = pos.lat; lng = pos.lng;
+  const attivaGPS = async () => {
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
-      const data = await res.json();
-      indirizzo = data.display_name || null;
-    } catch { }
-  } catch (err: any) {
-    setGpsError(err.toString());
-  }
+      await getPosizioneGPS();
+      setGpsAttivo(true);
+      setGpsError('');
+    } catch {
+      setGpsAttivo(true);
+      setGpsError('GPS non disponibile — la timbratura verrà registrata senza posizione.');
+    }
+  };
 
-  const { error } = await supabase.from('presenze').insert({
-    dipendente_id: user.id,
-    nome: user.nome,
-    tipo,
-    timestamp: new Date().toISOString(),
-    data: new Date().toISOString().split('T')[0],
-    latitudine: lat,
-    longitudine: lng,
-    indirizzo,
-    cantiere_id: cantiere.id,
-    cantiere_nome: cantiere.nome,
-  });
-
-  setLoading(false);
-  if (!error) {
-    setFeedback(tipo);
-    setCantiereSelezionato(cantiere);
-    setTimeout(() => setFeedback(null), 3000);
-  } else {
-    alert('Errore nella timbratura. Riprova.');
-  }
-};
+  const timbra = async (tipo: 'entrata' | 'uscita', cantiere: any) => {
+    if (!user || loading) return;
+    setLoading(true);
+    setGpsError('');
+    setMostraSceltaCantiere(false);
+    let lat = null, lng = null, indirizzo = null;
+    try {
+      const pos = await getPosizioneGPS();
+      lat = pos.lat; lng = pos.lng;
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+        const data = await res.json();
+        indirizzo = data.display_name || null;
+      } catch { }
+    } catch (err: any) {
+      setGpsError(err.toString());
+    }
+    const { error } = await supabase.from('presenze').insert({
+      dipendente_id: user.id,
+      nome: user.nome,
+      tipo,
+      timestamp: new Date().toISOString(),
+      data: new Date().toISOString().split('T')[0],
+      latitudine: lat,
+      longitudine: lng,
+      indirizzo,
+      cantiere_id: cantiere?.id || null,
+      cantiere_nome: cantiere?.nome || null,
+    });
+    setLoading(false);
+    if (!error) {
+      setFeedback(tipo);
+      setTimeout(() => setFeedback(null), 3000);
+    } else {
+      alert('Errore nella timbratura. Riprova.');
+    }
+  };
 
   const getStatoDipendente = (id: number) => {
     const ultima = ultimePresenze.find(p => p.dipendente_id === id);
@@ -352,7 +329,7 @@ const [tipoTimbraturaPending, setTipoTimbraturaPending] = useState<'entrata'|'us
 
   const handleLogout = () => {
     setUser(null); setPin(''); setSelectedDip(null);
-    setAdminView('lista'); setPresenze([]);
+    setAdminView('lista'); setPresenze([]); setGpsAttivo(false);
   };
 
   // ── LOGIN ─────────────────────────────────────────────────────────────────
@@ -376,7 +353,6 @@ const [tipoTimbraturaPending, setTipoTimbraturaPending] = useState<'entrata'|'us
     const dipPresentiOggi = new Set(
       presenze.filter(p => p.data === new Date().toISOString().split('T')[0]).map(p => p.dipendente_id)
     ).size;
-
     return (
       <div className="min-h-screen bg-slate-950 text-white p-6">
         <header className="flex justify-between items-center mb-8">
@@ -386,14 +362,11 @@ const [tipoTimbraturaPending, setTipoTimbraturaPending] = useState<'entrata'|'us
           </div>
           <button onClick={handleLogout} className="p-2 bg-slate-800 rounded-lg"><LogOut size={20} /></button>
         </header>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Card title="Dipendenti Totali" subtitle={datiDipendenti.length} icon={Users} color="bg-blue-500" />
           <Card title="Presenti Oggi" subtitle={dipPresentiOggi} icon={AlertCircle} color="bg-emerald-500" />
           <Card title="Timbrature Mese" subtitle={presenze.length} icon={Clock} color="bg-violet-500" />
         </div>
-
-        {/* Tabs + Mese */}
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <button onClick={() => setAdminView('lista')}
             className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${adminView === 'lista' ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
@@ -416,7 +389,6 @@ const [tipoTimbraturaPending, setTipoTimbraturaPending] = useState<'entrata'|'us
           </div>
         </div>
 
-        {/* Lista */}
         {adminView === 'lista' && (
           <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -426,7 +398,7 @@ const [tipoTimbraturaPending, setTipoTimbraturaPending] = useState<'entrata'|'us
                   <th className="p-4">Nome</th>
                   <th className="p-4">PIN</th>
                   <th className="p-4">Ultima Timbratura</th>
-                  <th className="p-4">Posizione</th>
+                  <th className="p-4">Cantiere</th>
                   <th className="p-4">Stato</th>
                   <th className="p-4">Dettaglio</th>
                 </tr>
@@ -443,24 +415,15 @@ const [tipoTimbraturaPending, setTipoTimbraturaPending] = useState<'entrata'|'us
                       <td className="p-4 text-slate-400 text-xs">
                         {ultimaRec ? new Date(ultimaRec.timestamp).toLocaleString('it-IT') : '—'}
                       </td>
-                      <td className="p-4 text-xs">
-                        {ultimaRec?.latitudine ? (
-                          <button
-                            onClick={() => setAdminView('mappa')}
-                            className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
-                          >
-                            <MapPin size={12} />
-                            <span>{ultimaRec.latitudine.toFixed(4)}, {ultimaRec.longitudine.toFixed(4)}</span>
-                          </button>
-                        ) : <span className="text-slate-600">—</span>}
+                      <td className="p-4 text-xs text-blue-400">
+                        {ultimaRec?.cantiere_nome || '—'}
                       </td>
                       <td className="p-4">
                         <span className={`text-[10px] px-2 py-1 rounded font-bold ${
                           stato === 'entrata' ? 'bg-emerald-500/20 text-emerald-400' :
                           stato === 'uscita'  ? 'bg-rose-500/20 text-rose-400' :
                           'bg-slate-800 text-slate-500'}`}>
-                          {stato === 'entrata' ? '● In Servizio' :
-                           stato === 'uscita'  ? '○ Uscito' : 'Offline'}
+                          {stato === 'entrata' ? '● In Servizio' : stato === 'uscita' ? '○ Uscito' : 'Offline'}
                         </span>
                       </td>
                       <td className="p-4">
@@ -477,7 +440,6 @@ const [tipoTimbraturaPending, setTipoTimbraturaPending] = useState<'entrata'|'us
           </div>
         )}
 
-        {/* Calendari */}
         {adminView === 'calendario' && (
           <div>
             <div className="flex items-center gap-3 mb-4">
@@ -497,25 +459,12 @@ const [tipoTimbraturaPending, setTipoTimbraturaPending] = useState<'entrata'|'us
           </div>
         )}
 
-        {/* Mappa */}
         {adminView === 'mappa' && <MappaPresenze presenze={presenze} />}
       </div>
     );
   }
 
   // ── DIPENDENTE ────────────────────────────────────────────────────────────
-  
-
-  const attivaGPS = async () => {
-    try {
-      await getPosizioneGPS();
-      setGpsAttivo(true);
-      setGpsError('');
-    } catch (err: any) {
-      setGpsError('Permesso GPS negato. Vai su Impostazioni → Safari → Posizione → Consenti');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-slate-900 text-white p-6">
       <div className="flex justify-between items-center mb-8">
@@ -532,6 +481,12 @@ const [tipoTimbraturaPending, setTipoTimbraturaPending] = useState<'entrata'|'us
         </div>
       )}
 
+      {gpsError && (
+        <div className="mb-4 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs">
+          ⚠️ {gpsError}
+        </div>
+      )}
+
       <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4 mb-6 flex justify-between items-center">
         <div>
           <p className="text-slate-400 text-xs mb-1">Ore contrattuali/giorno</p>
@@ -543,48 +498,64 @@ const [tipoTimbraturaPending, setTipoTimbraturaPending] = useState<'entrata'|'us
         </div>
       </div>
 
-      {/* Scelta cantiere */}
-{mostraSceltaCantiere && (
-  <div className="mb-6 bg-slate-800 border border-slate-700 rounded-2xl p-4">
-    <h3 className="font-bold text-white mb-3 text-center">
-      {tipoTimbraturaPending === 'entrata' ? '🟢 ENTRATA' : '🔴 USCITA'} — Scegli il cantiere
-    </h3>
-    <div className="space-y-2 max-h-64 overflow-y-auto">
-      {cantieri.map(c => (
-        <button
-          key={c.id}
-          onClick={() => timbra(tipoTimbraturaPending!, c)}
-          className="w-full p-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-left transition-colors"
-        >
-          <p className="font-bold text-white text-sm">{c.nome}</p>
-          {c.indirizzo && <p className="text-slate-400 text-xs">{c.indirizzo}</p>}
-        </button>
-      ))}
-    </div>
-    <button
-      onClick={() => setMostraSceltaCantiere(false)}
-      className="w-full mt-3 p-2 text-slate-500 text-sm hover:text-slate-300"
-    >
-      Annulla
-    </button>
-  </div>
-)}
+      {!gpsAttivo && (
+        <div className="mb-6">
+          <button onClick={attivaGPS}
+            className="w-full p-4 bg-blue-500/20 border-2 border-blue-500/40 hover:bg-blue-500/30 rounded-2xl text-blue-400 font-bold text-lg transition-all flex items-center justify-center gap-3">
+            <MapPin size={24} />ATTIVA POSIZIONE GPS
+          </button>
+          <p className="text-center text-slate-500 text-xs mt-2">Necessario per registrare la posizione alla timbratura</p>
+        </div>
+      )}
 
-{!mostraSceltaCantiere && (
-  <div className="space-y-4">
-    <button
-      onClick={() => { setTipoTimbraturaPending('entrata'); setMostraSceltaCantiere(true); }}
-      disabled={loading}
-      className="w-full h-36 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 rounded-[2rem] font-black text-2xl shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">
-      {loading ? '📍 Registrazione...' : 'ENTRATA'}
-    </button>
-    <button
-      onClick={() => { setTipoTimbraturaPending('uscita'); setMostraSceltaCantiere(true); }}
-      disabled={loading}
-      className="w-full h-36 bg-rose-500 hover:bg-rose-600 disabled:opacity-50 rounded-[2rem] font-black text-2xl shadow-xl shadow-rose-500/20 active:scale-95 transition-all">
-      {loading ? '📍 Registrazione...' : 'USCITA'}
-    </button>
-  </div>
-)}
-);
+      {gpsAttivo && (
+        <div className="mb-6 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs text-center flex items-center justify-center gap-2">
+          <MapPin size={14} /> Posizione GPS attiva ✓
+        </div>
+      )}
+
+      {/* Scelta cantiere */}
+      {mostraSceltaCantiere && (
+        <div className="mb-6 bg-slate-800 border border-slate-700 rounded-2xl p-4">
+          <h3 className="font-bold text-white mb-3 text-center">
+            {tipoTimbraturaPending === 'entrata' ? '🟢 ENTRATA' : '🔴 USCITA'} — Scegli il cantiere
+          </h3>
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {cantieri.map(c => (
+              <button key={c.id} onClick={() => timbra(tipoTimbraturaPending!, c)}
+                className="w-full p-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-left transition-colors">
+                <p className="font-bold text-white text-sm">{c.nome}</p>
+                {c.indirizzo && <p className="text-slate-400 text-xs">{c.indirizzo}</p>}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => setMostraSceltaCantiere(false)}
+            className="w-full mt-3 p-2 text-slate-500 text-sm hover:text-slate-300">
+            Annulla
+          </button>
+        </div>
+      )}
+
+      {!mostraSceltaCantiere && (
+        <div className="space-y-4">
+          <button
+            onClick={() => { setTipoTimbraturaPending('entrata'); setMostraSceltaCantiere(true); }}
+            disabled={loading}
+            className="w-full h-36 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 rounded-[2rem] font-black text-2xl shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">
+            {loading ? '📍 Registrazione...' : 'ENTRATA'}
+          </button>
+          <button
+            onClick={() => { setTipoTimbraturaPending('uscita'); setMostraSceltaCantiere(true); }}
+            disabled={loading}
+            className="w-full h-36 bg-rose-500 hover:bg-rose-600 disabled:opacity-50 rounded-[2rem] font-black text-2xl shadow-xl shadow-rose-500/20 active:scale-95 transition-all">
+            {loading ? '📍 Registrazione...' : 'USCITA'}
+          </button>
+        </div>
+      )}
+
+      <p className="text-center text-slate-600 text-xs mt-6 flex items-center justify-center gap-1">
+        <MapPin size={10} /> La posizione GPS viene registrata ad ogni timbratura
+      </p>
+    </div>
+  );
 }
