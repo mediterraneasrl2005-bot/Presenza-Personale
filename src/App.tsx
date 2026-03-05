@@ -237,6 +237,7 @@ export default function App() {
   const [presenze, setPresenze] = useState<any[]>([]);
   const [ultimePresenze, setUltimePresenze] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [gpsAttivo, setGpsAttivo] = useState(false);
   const [feedback, setFeedback] = useState<'entrata' | 'uscita' | null>(null);
   const [gpsError, setGpsError] = useState('');
 
@@ -490,6 +491,18 @@ export default function App() {
   }
 
   // ── DIPENDENTE ────────────────────────────────────────────────────────────
+  
+
+  const attivaGPS = async () => {
+    try {
+      await getPosizioneGPS();
+      setGpsAttivo(true);
+      setGpsError('');
+    } catch (err: any) {
+      setGpsError('Permesso GPS negato. Vai su Impostazioni → Safari → Posizione → Consenti');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-900 text-white p-6">
       <div className="flex justify-between items-center mb-8">
@@ -506,12 +519,6 @@ export default function App() {
         </div>
       )}
 
-      {gpsError && (
-        <div className="mb-4 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs">
-          ⚠️ {gpsError} — la timbratura è stata registrata senza posizione GPS.
-        </div>
-      )}
-
       <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4 mb-6 flex justify-between items-center">
         <div>
           <p className="text-slate-400 text-xs mb-1">Ore contrattuali/giorno</p>
@@ -523,14 +530,45 @@ export default function App() {
         </div>
       </div>
 
+      {/* Pulsante attiva GPS - visibile solo se GPS non ancora attivo */}
+      {!gpsAttivo && (
+        <div className="mb-6">
+          <button
+            onClick={attivaGPS}
+            className="w-full p-4 bg-blue-500/20 border-2 border-blue-500/40 hover:bg-blue-500/30 rounded-2xl text-blue-400 font-bold text-lg transition-all flex items-center justify-center gap-3"
+          >
+            <MapPin size={24} />
+            ATTIVA POSIZIONE GPS
+          </button>
+          <p className="text-center text-slate-500 text-xs mt-2">
+            Necessario per registrare la posizione alla timbratura
+          </p>
+          {gpsError && (
+            <div className="mt-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs text-center">
+              ⚠️ {gpsError}
+            </div>
+          )}
+        </div>
+      )}
+
+      {gpsAttivo && (
+        <div className="mb-6 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs text-center flex items-center justify-center gap-2">
+          <MapPin size={14} /> Posizione GPS attiva ✓
+        </div>
+      )}
+
       <div className="space-y-4">
-        <button onClick={() => timbra('entrata')} disabled={loading}
+        <button
+          onClick={() => timbra('entrata')}
+          disabled={loading}
           className="w-full h-36 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 rounded-[2rem] font-black text-2xl shadow-xl shadow-emerald-500/20 active:scale-95 transition-all">
-          {loading ? '📍 Rilevamento GPS...' : 'ENTRATA'}
+          {loading ? '📍 Registrazione...' : 'ENTRATA'}
         </button>
-        <button onClick={() => timbra('uscita')} disabled={loading}
+        <button
+          onClick={() => timbra('uscita')}
+          disabled={loading}
           className="w-full h-36 bg-rose-500 hover:bg-rose-600 disabled:opacity-50 rounded-[2rem] font-black text-2xl shadow-xl shadow-rose-500/20 active:scale-95 transition-all">
-          {loading ? '📍 Rilevamento GPS...' : 'USCITA'}
+          {loading ? '📍 Registrazione...' : 'USCITA'}
         </button>
       </div>
 
@@ -539,4 +577,3 @@ export default function App() {
       </p>
     </div>
   );
-}
