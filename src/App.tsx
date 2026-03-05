@@ -266,10 +266,18 @@ export default function App() {
         reject('GPS non supportato dal dispositivo');
         return;
       }
+      // Primo tentativo veloce senza alta precisione
       navigator.geolocation.getCurrentPosition(
         (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        (err) => reject('Impossibile ottenere la posizione GPS: ' + err.message),
-    { enableHighAccuracy: false, timeout: 30000, maximumAge: 60000 }
+        () => {
+          // Secondo tentativo con impostazioni diverse per Safari iOS
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            (err) => reject('Impossibile ottenere la posizione GPS: ' + err.message),
+            { enableHighAccuracy: false, timeout: 60000, maximumAge: 300000 }
+          );
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     });
   };
