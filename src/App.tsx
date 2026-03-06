@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, LogOut, Users, AlertCircle, Calendar, MapPin } from 'lucide-react';
+import { Clock, LogOut, Users, AlertCircle, Calendar, MapPin, Plus, Trash2, Edit2, Save, X } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -17,7 +17,7 @@ const supabase = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6Z2pyeHB0Y2JsZmJmbXlsZWV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NTE1ODgsImV4cCI6MjA4ODEyNzU4OH0.DrFFUtZ9NDjag7SAegxYkwB1xEOELbmNL4tZhgg50OA'
 );
 
-const datiDipendenti = [
+const DIPENDENTI_INIZIALI = [
   { id: 1,  nome: "MARINO MARIA ROSA",     pin: "1001", ore_g: 0.5,  totale_ore: 8 },
   { id: 2,  nome: "DOMINO ENRICA",          pin: "1002", ore_g: 5,    totale_ore: 100 },
   { id: 3,  nome: "FARRUGGIA GIUSEPPINA",   pin: "1003", ore_g: 1.5,  totale_ore: 30 },
@@ -138,16 +138,6 @@ const CalendarioMensile = ({ dipendente, meseInfo, presenzeMese }: any) => {
           );
         })}
       </div>
-      <div className="flex gap-3 mt-2 flex-wrap">
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-sm bg-emerald-500/30 border border-emerald-500/40" />
-          <span className="text-[8px] text-slate-600">Completo</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-sm bg-yellow-500/20 border border-yellow-500/30" />
-          <span className="text-[8px] text-slate-600">Solo entrata</span>
-        </div>
-      </div>
     </div>
   );
 };
@@ -181,8 +171,8 @@ const MappaPresenze = ({ presenze }: { presenze: any[] }) => {
           <MapPin size={16} className="text-emerald-400" />Mappa Timbrature
         </h3>
         <div className="flex gap-3 text-xs">
-          <span className="flex items-center gap-1 text-emerald-400">● Entrata</span>
-          <span className="flex items-center gap-1 text-rose-400">● Uscita</span>
+          <span className="text-emerald-400">● Entrata</span>
+          <span className="text-rose-400">● Uscita</span>
         </div>
       </div>
       <MapContainer center={centro} zoom={13} style={{ height: '450px', width: '100%' }}>
@@ -194,7 +184,6 @@ const MappaPresenze = ({ presenze }: { presenze: any[] }) => {
                 <p className="font-bold">{p.nome}</p>
                 <p className="capitalize">{p.tipo} — {new Date(p.timestamp).toLocaleString('it-IT')}</p>
                 {p.cantiere_nome && <p className="text-blue-600 mt-1">🏗️ {p.cantiere_nome}</p>}
-                {p.indirizzo && <p className="text-gray-500 mt-1">{p.indirizzo}</p>}
               </div>
             </Popup>
           </Marker>
@@ -209,7 +198,7 @@ export default function App() {
   const [pin, setPin] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [selectedDip, setSelectedDip] = useState<any>(null);
-  const [adminView, setAdminView] = useState<'lista' | 'calendario' | 'mappa'>('lista');
+  const [adminView, setAdminView] = useState<'lista' | 'calendario' | 'mappa' | 'gestione'>('lista');
   const [meseSelIdx, setMeseSelIdx] = useState(14);
   const [presenze, setPresenze] = useState<any[]>([]);
   const [ultimePresenze, setUltimePresenze] = useState<any[]>([]);
@@ -220,6 +209,12 @@ export default function App() {
   const [cantieri, setCantieri] = useState<any[]>([]);
   const [mostraSceltaCantiere, setMostraSceltaCantiere] = useState(false);
   const [tipoTimbraturaPending, setTipoTimbraturaPending] = useState<'entrata' | 'uscita' | null>(null);
+
+  // Gestione dipendenti
+  const [dipendenti, setDipendenti] = useState<any[]>(DIPENDENTI_INIZIALI);
+  const [editingDip, setEditingDip] = useState<any>(null);
+  const [showAddDip, setShowAddDip] = useState(false);
+  const [newDip, setNewDip] = useState({ nome: '', pin: '', ore_g: 0, totale_ore: 0 });
 
   const meseInfo = MESI[meseSelIdx];
 
@@ -243,9 +238,16 @@ export default function App() {
 
   useEffect(() => {
     if (!user || isAdmin) return;
-    supabase.from('cantieri').select('*')
-      .eq('attivo', true).order('nome')
-      .then(({ data }) => { if (data) setCantieri(data); });
+    supabase
+      .from('dipendente_cantieri')
+      .select('cantiere_id, cantieri(id, nome, indirizzo)')
+      .eq('dipendente_id', user.id)
+      .then(({ data }) => {
+        if (data) {
+          const lista = data.map((r: any) => r.cantieri).filter(Boolean);
+          setCantieri(lista);
+        }
+      });
   }, [user]);
 
   const getPosizioneGPS = (): Promise<{ lat: number; lng: number }> => {
@@ -290,28 +292,18 @@ export default function App() {
         const data = await res.json();
         indirizzo = data.display_name || null;
       } catch { }
-    } catch (err: any) {
-      setGpsError(err.toString());
-    }
+    } catch (err: any) { setGpsError(err.toString()); }
     const { error } = await supabase.from('presenze').insert({
-      dipendente_id: user.id,
-      nome: user.nome,
-      tipo,
+      dipendente_id: user.id, nome: user.nome, tipo,
       timestamp: new Date().toISOString(),
       data: new Date().toISOString().split('T')[0],
-      latitudine: lat,
-      longitudine: lng,
-      indirizzo,
+      latitudine: lat, longitudine: lng, indirizzo,
       cantiere_id: cantiere?.id || null,
       cantiere_nome: cantiere?.nome || null,
     });
     setLoading(false);
-    if (!error) {
-      setFeedback(tipo);
-      setTimeout(() => setFeedback(null), 3000);
-    } else {
-      alert('Errore nella timbratura. Riprova.');
-    }
+    if (!error) { setFeedback(tipo); setTimeout(() => setFeedback(null), 3000); }
+    else alert('Errore nella timbratura. Riprova.');
   };
 
   const getStatoDipendente = (id: number) => {
@@ -319,10 +311,30 @@ export default function App() {
     return ultima ? ultima.tipo : null;
   };
 
+  const salvaDipendente = () => {
+    if (!editingDip) return;
+    setDipendenti(prev => prev.map(d => d.id === editingDip.id ? editingDip : d));
+    setEditingDip(null);
+  };
+
+  const eliminaDipendente = (id: number) => {
+    if (confirm('Sei sicuro di voler eliminare questo dipendente?')) {
+      setDipendenti(prev => prev.filter(d => d.id !== id));
+    }
+  };
+
+  const aggiungiDipendente = () => {
+    if (!newDip.nome || !newDip.pin) { alert('Nome e PIN sono obbligatori!'); return; }
+    const nuovoId = Math.max(...dipendenti.map(d => d.id)) + 1;
+    setDipendenti(prev => [...prev, { ...newDip, id: nuovoId }]);
+    setNewDip({ nome: '', pin: '', ore_g: 0, totale_ore: 0 });
+    setShowAddDip(false);
+  };
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (pin === "0000") { setIsAdmin(true); setUser({ nome: "Amministratore" }); return; }
-    const trovato = datiDipendenti.find(d => d.pin === pin);
+    const trovato = dipendenti.find(d => d.pin === pin);
     if (trovato) { setIsAdmin(false); setUser(trovato); }
     else alert("PIN errato!");
   };
@@ -362,24 +374,20 @@ export default function App() {
           </div>
           <button onClick={handleLogout} className="p-2 bg-slate-800 rounded-lg"><LogOut size={20} /></button>
         </header>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card title="Dipendenti Totali" subtitle={datiDipendenti.length} icon={Users} color="bg-blue-500" />
+          <Card title="Dipendenti Totali" subtitle={dipendenti.length} icon={Users} color="bg-blue-500" />
           <Card title="Presenti Oggi" subtitle={dipPresentiOggi} icon={AlertCircle} color="bg-emerald-500" />
           <Card title="Timbrature Mese" subtitle={presenze.length} icon={Clock} color="bg-violet-500" />
         </div>
-        <div className="flex flex-wrap items-center gap-3 mb-6">
-          <button onClick={() => setAdminView('lista')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${adminView === 'lista' ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
-            Lista Dipendenti
-          </button>
-          <button onClick={() => setAdminView('calendario')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${adminView === 'calendario' ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
-            Calendari Presenze
-          </button>
-          <button onClick={() => setAdminView('mappa')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${adminView === 'mappa' ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
-            <MapPin size={14} className="inline mr-2" />Mappa GPS
-          </button>
+
+        <div className="flex flex-wrap items-center gap-2 mb-6">
+          {(['lista','calendario','mappa','gestione'] as const).map(v => (
+            <button key={v} onClick={() => setAdminView(v)}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${adminView === v ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
+              {v === 'lista' ? '👥 Lista' : v === 'calendario' ? '📅 Calendari' : v === 'mappa' ? '🗺️ Mappa GPS' : '⚙️ Gestione'}
+            </button>
+          ))}
           <div className="flex items-center gap-2 ml-auto">
             <span className="text-slate-400 text-sm">Mese:</span>
             <select value={meseSelIdx} onChange={(e) => setMeseSelIdx(Number(e.target.value))}
@@ -389,6 +397,7 @@ export default function App() {
           </div>
         </div>
 
+        {/* LISTA */}
         {adminView === 'lista' && (
           <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -404,7 +413,7 @@ export default function App() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
-                {datiDipendenti.map(d => {
+                {dipendenti.map(d => {
                   const stato = getStatoDipendente(d.id);
                   const ultimaRec = ultimePresenze.find(p => p.dipendente_id === d.id);
                   return (
@@ -415,9 +424,7 @@ export default function App() {
                       <td className="p-4 text-slate-400 text-xs">
                         {ultimaRec ? new Date(ultimaRec.timestamp).toLocaleString('it-IT') : '—'}
                       </td>
-                      <td className="p-4 text-xs text-blue-400">
-                        {ultimaRec?.cantiere_nome || '—'}
-                      </td>
+                      <td className="p-4 text-xs text-blue-400">{ultimaRec?.cantiere_nome || '—'}</td>
                       <td className="p-4">
                         <span className={`text-[10px] px-2 py-1 rounded font-bold ${
                           stato === 'entrata' ? 'bg-emerald-500/20 text-emerald-400' :
@@ -440,6 +447,7 @@ export default function App() {
           </div>
         )}
 
+        {/* CALENDARI */}
         {adminView === 'calendario' && (
           <div>
             <div className="flex items-center gap-3 mb-4">
@@ -452,14 +460,131 @@ export default function App() {
               )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {(selectedDip ? [selectedDip] : datiDipendenti).map(d => (
+              {(selectedDip ? [selectedDip] : dipendenti).map(d => (
                 <CalendarioMensile key={d.id} dipendente={d} meseInfo={meseInfo} presenzeMese={presenze} />
               ))}
             </div>
           </div>
         )}
 
+        {/* MAPPA */}
         {adminView === 'mappa' && <MappaPresenze presenze={presenze} />}
+
+        {/* GESTIONE DIPENDENTI */}
+        {adminView === 'gestione' && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold">⚙️ Gestione Dipendenti</h3>
+              <button onClick={() => setShowAddDip(!showAddDip)}
+                className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-xl text-sm font-bold transition-all">
+                <Plus size={16} /> Nuovo Dipendente
+              </button>
+            </div>
+
+            {/* Form nuovo dipendente */}
+            {showAddDip && (
+              <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4 mb-4">
+                <h4 className="font-bold mb-3 text-emerald-400">➕ Aggiungi Dipendente</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <input placeholder="Nome completo" value={newDip.nome}
+                    onChange={e => setNewDip({...newDip, nome: e.target.value.toUpperCase()})}
+                    className="col-span-2 p-2 bg-slate-700 rounded-lg text-sm outline-none focus:ring-1 focus:ring-emerald-500" />
+                  <input placeholder="PIN (es. 1033)" value={newDip.pin}
+                    onChange={e => setNewDip({...newDip, pin: e.target.value})}
+                    className="p-2 bg-slate-700 rounded-lg text-sm outline-none focus:ring-1 focus:ring-emerald-500" />
+                  <input placeholder="Ore/giorno" type="number" value={newDip.ore_g}
+                    onChange={e => setNewDip({...newDip, ore_g: Number(e.target.value)})}
+                    className="p-2 bg-slate-700 rounded-lg text-sm outline-none focus:ring-1 focus:ring-emerald-500" />
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <button onClick={aggiungiDipendente}
+                    className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-lg text-sm font-bold transition-all">
+                    <Save size={14} /> Salva
+                  </button>
+                  <button onClick={() => setShowAddDip(false)}
+                    className="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg text-sm transition-all">
+                    <X size={14} /> Annulla
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-800/50 text-slate-500 text-[10px] uppercase">
+                  <tr>
+                    <th className="p-4">#</th>
+                    <th className="p-4">Nome</th>
+                    <th className="p-4">PIN</th>
+                    <th className="p-4">Ore/Giorno</th>
+                    <th className="p-4">Ore Totali</th>
+                    <th className="p-4">Azioni</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {dipendenti.map(d => (
+                    <tr key={d.id} className="hover:bg-slate-800/30 transition-colors">
+                      <td className="p-4 text-slate-500 text-xs">{d.id}</td>
+                      <td className="p-4">
+                        {editingDip?.id === d.id ? (
+                          <input value={editingDip.nome}
+                            onChange={e => setEditingDip({...editingDip, nome: e.target.value.toUpperCase()})}
+                            className="w-full p-1 bg-slate-700 rounded text-xs outline-none focus:ring-1 focus:ring-emerald-500" />
+                        ) : <span className="font-bold text-xs">{d.nome}</span>}
+                      </td>
+                      <td className="p-4">
+                        {editingDip?.id === d.id ? (
+                          <input value={editingDip.pin}
+                            onChange={e => setEditingDip({...editingDip, pin: e.target.value})}
+                            className="w-20 p-1 bg-slate-700 rounded text-xs outline-none focus:ring-1 focus:ring-emerald-500" />
+                        ) : <span className="text-emerald-400 font-mono text-xs">{d.pin}</span>}
+                      </td>
+                      <td className="p-4">
+                        {editingDip?.id === d.id ? (
+                          <input type="number" value={editingDip.ore_g}
+                            onChange={e => setEditingDip({...editingDip, ore_g: Number(e.target.value)})}
+                            className="w-20 p-1 bg-slate-700 rounded text-xs outline-none focus:ring-1 focus:ring-emerald-500" />
+                        ) : <span className="text-xs">{d.ore_g}h</span>}
+                      </td>
+                      <td className="p-4">
+                        {editingDip?.id === d.id ? (
+                          <input type="number" value={editingDip.totale_ore}
+                            onChange={e => setEditingDip({...editingDip, totale_ore: Number(e.target.value)})}
+                            className="w-20 p-1 bg-slate-700 rounded text-xs outline-none focus:ring-1 focus:ring-emerald-500" />
+                        ) : <span className="text-xs">{d.totale_ore}h</span>}
+                      </td>
+                      <td className="p-4">
+                        {editingDip?.id === d.id ? (
+                          <div className="flex gap-1">
+                            <button onClick={salvaDipendente}
+                              className="p-1 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded transition-colors">
+                              <Save size={14} />
+                            </button>
+                            <button onClick={() => setEditingDip(null)}
+                              className="p-1 bg-slate-700 text-slate-400 hover:bg-slate-600 rounded transition-colors">
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-1">
+                            <button onClick={() => setEditingDip({...d})}
+                              className="p-1 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded transition-colors">
+                              <Edit2 size={14} />
+                            </button>
+                            <button onClick={() => eliminaDipendente(d.id)}
+                              className="p-1 bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 rounded transition-colors">
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -514,7 +639,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Scelta cantiere */}
       {mostraSceltaCantiere && (
         <div className="mb-6 bg-slate-800 border border-slate-700 rounded-2xl p-4">
           <h3 className="font-bold text-white mb-3 text-center">
