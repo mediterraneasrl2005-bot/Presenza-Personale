@@ -227,6 +227,12 @@ export default function App() {
       .gte('timestamp', dataInizio).lte('timestamp', dataFine)
       .order('timestamp', { ascending: false })
       .then(({ data }) => { if (data) setPresenze(data); });
+      const timer = setInterval(() => {
+  supabase.from('presenze').select('*')
+    .order('timestamp', { ascending: false })
+    .then(({ data }) => { if (data) setUltimePresenze(data); });
+}, 10000);
+return () => clearInterval(timer);
   }, [isAdmin, meseSelIdx]);
 
   useEffect(() => {
@@ -234,33 +240,13 @@ export default function App() {
     supabase.from('presenze').select('*')
       .order('timestamp', { ascending: false })
       .then(({ data }) => { if (data) setUltimePresenze(data); });
-
-    // Aggiornamento realtime
-    const channel = supabase
-      .channel('presenze-realtime')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'presenze' },
-        (payload) => {
-          setUltimePresenze(prev => [payload.new, ...prev]);
-          setPresenze(prev => [payload.new, ...prev]);
-        }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [isAdmin]);
+  }, [isAdmin, presenze]);
 
   useEffect(() => {
     if (!user || isAdmin) return;
-    supabase
-      .from('dipendente_cantieri')
-      .select('cantiere_id, cantieri(id, nome, indirizzo)')
-      .eq('dipendente_id', user.id)
-      .then(({ data }) => {
-        if (data) {
-          const lista = data.map((r: any) => r.cantieri).filter(Boolean);
-          setCantieri(lista);
-        }
-      });
+    supabase.from('cantieri').select('*')
+      .eq('attivo', true).order('nome')
+      .then(({ data }) => { if (data) setCantieri(data); });
   }, [user]);
 
   const getPosizioneGPS = (): Promise<{ lat: number; lng: number }> => {
