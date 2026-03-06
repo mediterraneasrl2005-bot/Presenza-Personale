@@ -234,7 +234,20 @@ export default function App() {
     supabase.from('presenze').select('*')
       .order('timestamp', { ascending: false })
       .then(({ data }) => { if (data) setUltimePresenze(data); });
-  }, [isAdmin, presenze]);
+
+    // Aggiornamento realtime
+    const channel = supabase
+      .channel('presenze-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'presenze' },
+        (payload) => {
+          setUltimePresenze(prev => [payload.new, ...prev]);
+          setPresenze(prev => [payload.new, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [isAdmin]);
 
   useEffect(() => {
     if (!user || isAdmin) return;
