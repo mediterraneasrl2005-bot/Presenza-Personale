@@ -371,7 +371,23 @@ return () => clearInterval(timer);
             <h1 className="text-2xl font-black">Dashboard Admin</h1>
             <p className="text-slate-400 text-sm">Controllo Cantieri</p>
           </div>
-          <button onClick={handleLogout} className="p-2 bg-slate-800 rounded-lg"><LogOut size={20} /></button>
+          <div className="flex gap-2">
+  <button onClick={() => {
+    const { anno, mese } = meseInfo;
+    const dataInizio = new Date(anno, mese, 1).toISOString();
+    const dataFine   = new Date(anno, mese + 1, 0, 23, 59, 59).toISOString();
+    supabase.from('presenze').select('*')
+      .gte('timestamp', dataInizio).lte('timestamp', dataFine)
+      .order('timestamp', { ascending: false })
+      .then(({ data }) => { if (data) setPresenze(data); });
+    supabase.from('presenze').select('*')
+      .order('timestamp', { ascending: false })
+      .then(({ data }) => { if (data) setUltimePresenze(data); });
+  }} className="p-2 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded-lg text-xs font-bold px-3">
+    🔄 Aggiorna
+  </button>
+  <button onClick={handleLogout} className="p-2 bg-slate-800 rounded-lg"><LogOut size={20} /></button>
+</div>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
